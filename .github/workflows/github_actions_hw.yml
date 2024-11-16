@@ -11,19 +11,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-  set-up-environment:
-    needs: checkout-code
+  execute-linting:
     runs-on: ubuntu-latest
+    needs: checkout-code
     steps:
       - name: Set up Python environment
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-
-  execute-linting:
-    runs-on: ubuntu-latest
-    needs: set-up-environment
-    steps:
       - name: Get changed .md files
         id: changed-files-specific
         uses: tj-actions/changed-files@v45
