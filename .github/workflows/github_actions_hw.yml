@@ -25,5 +25,5 @@ jobs:
         if: steps.changed-files-specific.outputs.any_changed == 'true'
         uses: advanced-security/python-lint-code-scanning-action@v1
         with:
-          linter: flake8
+          linter: pylint
           python-version: ${{ matrix.python-version }}
