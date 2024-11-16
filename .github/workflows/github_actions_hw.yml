@@ -3,7 +3,7 @@ run-name: ${{ github.actor }} workflow that triggers on pull request
 on:
   pull_request:
     branches:
-      - master
+      - main
 jobs:
   production-deploy:
     runs-on: ubuntu-latest
