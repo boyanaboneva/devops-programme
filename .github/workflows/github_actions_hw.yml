@@ -1,7 +1,7 @@
 name: workflow that triggers on pull request.
+run-name: ${{ github.actor }} workflow that triggers on pull request
 on:
   pull_request:
-    types: [opened, reopened]
     branches: ['main']
     paths: ['feature/**']
 jobs:
