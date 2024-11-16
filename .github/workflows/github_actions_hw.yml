@@ -1,19 +1,24 @@
-name: workflow that triggers on pull request.
+name: Workflow that triggers on pull request
 run-name: ${{ github.actor }} workflow that triggers on pull request
 on:
   pull_request:
     branches:
-      - master
+      - main
 jobs:
-  production-deploy:
+  checkout-code:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.9, 3.12]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+  execute-linting:
+    runs-on: ubuntu-latest
+    needs: checkout-code
+    steps:
+      - name: Set up Python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
       - name: Get changed .md files
         id: changed-files-specific
         uses: tj-actions/changed-files@v45
@@ -21,9 +26,6 @@ jobs:
           files: |
             **.md
 
-      - name: Run step if file changed
+      - name: flake8 Lint
         if: steps.changed-files-specific.outputs.any_changed == 'true'
-        uses: advanced-security/python-lint-code-scanning-action@v1
-        with:
-          linter: flake8
-          python-version: ${{ matrix.python-version }}
+        uses: py-actions/flake8@v2
