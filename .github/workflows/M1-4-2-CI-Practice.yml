@@ -43,3 +43,13 @@ jobs:
           path: "./*.py" # Glob pattern for files to lint
           fail: true # Fail the action if pylint errors are found
           pr-message: true # Send a PR message if pylint errors are found
+
+  python-black:
+    name: Python Black
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Python Black
+        uses: cytopia/docker-black@0.8
+        with:
+          path: 'src/'
