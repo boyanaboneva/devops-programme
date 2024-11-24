@@ -111,6 +111,9 @@ jobs:
     needs: [gitleaks-scan, editorconfig, python-pylint, python-black, markdownlint-cli, unittests]
     steps:
        - uses: actions/checkout@master
+       - name: Install dependencies
+         run: |
+           pip install -r requirements.txt
        - name: Run Snyk to check for vulnerabilities
          uses: snyk/actions/node@master
          env:
