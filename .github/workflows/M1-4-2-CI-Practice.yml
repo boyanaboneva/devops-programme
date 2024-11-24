@@ -10,7 +10,7 @@ on:
       - main
 
 jobs:
-  scan:
+  gitleaks-scan:
     name: GitLeaks scan for secrets
     runs-on: ubuntu-latest
     steps:
@@ -24,6 +24,7 @@ jobs:
   editorconfig:
     name: EditorConfig Checker
     runs-on: ubuntu-latest
+    needs: gitleaks-scan
     steps:
       - uses: actions/checkout@v4
       - uses: editorconfig-checker/action-editorconfig-checker@main
@@ -32,6 +33,7 @@ jobs:
   python-pylint:
     name: Executes pylint
     runs-on: ubuntu-latest
+    needs: gitleaks-scan
     steps:
       - name: Checkout
         uses: actions/checkout@v1
@@ -47,7 +49,20 @@ jobs:
   python-black:
     name: Python Black
     runs-on: ubuntu-latest
+    needs: gitleaks-scan
     steps:
       - uses: actions/checkout@v3
       - name: Python Black
         uses: cytopia/docker-black@0.8
+
+  markdownlint-cli:
+    name: Markdownlint CLI
+    runs-on: ubuntu-latest
+    needs: gitleaks-scan
+    steps:
+      - name: Install Markdownlint CLI
+        run: npm install -g markdownlint-cli
+
+      - name: Run Markdownlint
+        run: markdownlint **/*.md
+
