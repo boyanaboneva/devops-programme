@@ -139,7 +139,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
+          push: false
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/flaskapp:${{ github.sha }}
 
       - name: Trivy scan
@@ -150,6 +150,10 @@ jobs:
           ignore-unfixed: true
           vuln-type: "os,library"
           severity: 'CRITICAL,HIGH'
+
+      - name: Push docker image
+        if: ${{ success() }}
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/flaskapp:${{ github.sha }}
 
 
 
