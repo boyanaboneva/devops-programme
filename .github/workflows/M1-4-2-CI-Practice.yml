@@ -147,9 +147,11 @@ jobs:
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/flaskapp:${{ github.sha }}
           format: "table"
+          cache: true
           exit-code: "1"
           ignore-unfixed: true
           vuln-type: "os,library"
           severity: 'CRITICAL,HIGH'
+
 
 
