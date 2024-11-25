@@ -140,13 +140,15 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.sha }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/flaskapp:${{ github.sha }}
 
-     # - uses: actions/checkout@v2
       - name: Trivy scan
-        uses: lazy-actions/gitrivy@v3
+        uses: aquasecurity/trivy-action@0.28.0
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.sha }}
+          image-ref: ${{ vars.DOCKERHUB_USERNAME }}/flaskapp:${{ github.sha }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
 
 
