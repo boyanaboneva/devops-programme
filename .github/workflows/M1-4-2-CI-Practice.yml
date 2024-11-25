@@ -1,0 +1,159 @@
+name: Flask App GitHub Actions Pipeline
+run-name: Flask App GitHub Actions Pipeline
+
+on:
+  push:
+    branches:
+      - feature/M1-4-2-CI-Practice
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  gitleaks-scan:
+    name: GitLeaks scan for secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  editorconfig:
+    name: EditorConfig Checker
+    runs-on: ubuntu-latest
+    needs: gitleaks-scan
+    steps:
+      - uses: actions/checkout@v4
+      - uses: editorconfig-checker/action-editorconfig-checker@main
+      - run: editorconfig-checker
+
+  python-pylint:
+    name: Executes pylint
+    runs-on: ubuntu-latest
+    needs: gitleaks-scan
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Lint
+        uses: gabriel-milan/action-pylint@v1
+        with:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}} # GitHub token
+          path: "./*.py" # Glob pattern for files to lint
+          fail: true # Fail the action if pylint errors are found
+          pr-message: true # Send a PR message if pylint errors are found
+
+  python-black:
+    name: Python Black
+    runs-on: ubuntu-latest
+    needs: gitleaks-scan
+    steps:
+      - uses: actions/checkout@v3
+      - name: Python Black
+        uses: cytopia/docker-black@0.8
+
+  markdownlint-cli:
+    name: Markdownlint CLI
+    runs-on: ubuntu-latest
+    needs: gitleaks-scan
+    steps:
+      - name: Install Markdownlint CLI
+        run: npm install -g markdownlint-cli
+
+      - name: Run Markdownlint
+        run: markdownlint **/*.md
+
+  unittests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: gitleaks-scan
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: python -m unittest discover -s app -p "*.py"
+
+  sonarcloud:
+    name: Sonarcloud scan
+    runs-on: ubuntu-latest
+    needs: [gitleaks-scan, editorconfig, python-pylint, python-black, markdownlint-cli, unittests]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Disabling shallow clone is recommended for improving relevancy of reporting
+          fetch-depth: 0
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarcloud-github-action@v3.1.0
+        with:
+          args: >
+            -Dsonar.organization=boyanaboneva
+            -Dsonar.projectKey=boyanaboneva_devops-programme
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  snyk:
+    name: Snyk scan
+    runs-on: ubuntu-latest
+    needs: [gitleaks-scan, editorconfig, python-pylint, python-black, markdownlint-cli, unittests]
+    steps:
+      - uses: actions/checkout@master
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/python@master
+        continue-on-error: true # To make sure that SARIF upload gets called
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+  docker-trivy:
+    runs-on: ubuntu-latest
+    needs: [unittests, snyk, sonarcloud]
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/flaskapp:${{ github.sha }}
+
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/flaskapp:${{ github.sha }}
+          format: "table"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push docker image
+        if: ${{ success() }}
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/flaskapp:${{ github.sha }}
+
+
+
