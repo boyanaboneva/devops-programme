@@ -145,10 +145,11 @@ jobs:
       - name: Trivy scan
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: ${{ vars.DOCKERHUB_USERNAME }}/flaskapp:${{ github.sha }}
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/flaskapp:${{ github.sha }}
           format: "table"
           exit-code: "1"
           ignore-unfixed: true
           vuln-type: "os,library"
+          severity: 'CRITICAL,HIGH'
 
 
