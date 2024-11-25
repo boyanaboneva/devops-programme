@@ -140,7 +140,7 @@ jobs:
         uses: bitovi/github-actions-docker-publish@v1.0.3
         with:
           docker_username: ${{ secrets.DOCKERHUB_USERNAME }}
-          docker_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          docker_password: ${{ secrets.DOCKERHUB_TOKEN }}
           checkout: 'false'
           image_tag: it
           sha: 'true' # won't do anything since image_tag is set
